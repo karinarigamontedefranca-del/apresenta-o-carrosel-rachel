@@ -53,15 +53,76 @@ Tudo fica salvo numa **biblioteca**, onde dá para rever e baixar posts antigos 
 
 ---
 
-## 4. Referências de posts e imagens: é possível?
+## 4. Referências de posts e imagens
 
-**Hoje, de duas formas diferentes:**
+**Hoje, de três formas diferentes:**
 
-**a) Já embutido no sistema (feito pela equipe técnica).** Os posts de exemplo da Rachel e o manual de marca foram analisados e transformados em regras fixas: os 3 padrões de post, fontes, tamanhos, cores, posições e lógica de roteiro. É por isso que os posts saem "com a cara dela". Para ensinar um novo estilo ou formato, as regras podem ser atualizadas no código (rápido de fazer, mas passa por alguém técnico).
+**a) Já embutido no sistema.** Os posts de exemplo da Rachel e o manual de marca foram analisados e transformados em regras fixas: os 3 padrões de post, fontes, tamanhos, cores, posições e lógica de roteiro. É por isso que os posts saem "com a cara dela". Para ensinar um novo estilo ou formato, as regras podem ser atualizadas no código (rápido de fazer, mas passa por alguém técnico).
 
 **b) Referência pontual pelo campo de tema.** Dá para descrever, no campo de tema, a estrutura de um post que ela gostou (ex.: "carrossel com gatilhos variados e uma frase fixa embaixo, no estilo de tal post"). O gerador tenta seguir, mas mantém alguma liberdade de redação. Na prática, funciona bem quando o roteiro é bem detalhado.
 
-**O que ainda NÃO existe:** um botão para **anexar uma imagem ou PDF de referência direto no site** e o gerador "olhar" para ela e se inspirar. Isso é possível de construir (a IA consegue ler imagens), mas exige desenvolvimento adicional. É a melhor candidata a evolução da ferramenta.
+**c) Novo: anexar um post de referência (PDF ou prints).** Essa era a melhor candidata a evolução da ferramenta e já foi construída. Os detalhes estão abaixo.
+
+### 4.1 Como funciona
+Na etapa **Tema** há um bloco novo: **"Inspirar-se em um post que você gostou"**.
+
+1. A pessoa anexa um **PDF** (até 20 páginas) ou **prints** (PNG, JPG, WEBP; até 10 arquivos de 20 MB cada).
+2. A IA **lê o post** (texto e visual) e mostra um resumo do que entendeu: formato, abertura, ritmo, visual, tom, fechamento, assunto, ideia central e pontos abordados.
+3. Ao gerar, o sistema cria um **post novo** com a identidade da Rachel (fontes, cores, @, tagline), usando a referência de acordo com o modo escolhido.
+
+| Modo | O que faz |
+|---|---|
+| **Mesmo assunto, texto novo** (padrão) | Trata do mesmo assunto, da mesma ideia central e dos mesmos pontos do original, mas **reescreve tudo do zero**, com outro gancho de abertura e outras palavras. |
+| **Só o formato, assunto diferente** | Aproveita apenas a estrutura e o estilo (nº de slides, ritmo, layout) e muda o assunto. Oferece 3 ideias de assunto para clicar. |
+
+No modo padrão o campo de tema pode ficar **vazio**: o sistema usa o assunto do post enviado. Se a pessoa digitar um tema, ele é combinado com o conteúdo do original.
+
+### 4.2 Como o risco de plágio é reduzido
+- A leitura **não guarda as frases do original**: os pontos são resumidos com palavras da própria IA.
+- A geração recebe a instrução de não copiar frases, expressões de destaque, trechos nem a ordem de frases, de não copiar fotos ou elementos de marca, e de **não inventar fatos** que não estejam no original ou no tema.
+- A identidade visual e as regras do sistema **sempre valem mais** que a referência.
+- Ressalva: se o original tem dados ou fatos específicos, a Rachel deve **conferir antes de publicar**.
+
+### 4.3 Proteções técnicas
+- Limites de tamanho e de nº de páginas (seguram custo e memória do Render gratuito).
+- PDF protegido por senha ou corrompido gera mensagem amigável.
+- O texto vindo da IA é limitado em tamanho e mostrado na tela sem executar código.
+- Posts **sem referência** continuam **exatamente como antes** (a mensagem enviada à IA é idêntica).
+
+### 4.4 Custo da referência
+Estimativas pela tabela pública da Anthropic (Sonnet 4.5: US$ 3 por milhão de tokens de entrada e US$ 15 de saída; Haiku 4.5: US$ 1 e US$ 5). O custo real de cada leitura aparece no site, logo abaixo da leitura.
+
+| Tamanho da referência | Sonnet | Haiku (opcional) |
+|---|---|---|
+| 3 páginas / prints | ~US$ 0,04 | ~US$ 0,015 |
+| 8 páginas (típico) | ~US$ 0,06 | ~US$ 0,02 |
+| 20 páginas (limite) | ~US$ 0,12 | ~US$ 0,04 |
+
+| Componente | Custo |
+|---|---|
+| Leitura da referência (8 páginas, Sonnet) | ~US$ 0,06 |
+| Texto e layout do carrossel (Claude) | ~US$ 0,10 a 0,15 |
+| Extra da referência na geração | ~US$ 0,004 |
+| Fotos de fundo (OpenAI, 6 a 10 fotos) | ~US$ 0,35 a 0,60 |
+| **Total** | **~US$ 0,52 a 0,81 (≈ R$ 2,90 a R$ 4,50)** |
+
+Um post **sem** referência custa ~US$ 0,50 a 0,75. A referência acrescenta menos de 10 centavos de dólar (≈ R$ 0,35), porque as fotos são a maior parte do custo.
+
+Com os ~US$ 5 da Anthropic: ~80 leituras de referência (Sonnet, 8 páginas), ~240 leituras (Haiku) ou ~25 posts completos com referência (parte Claude: ~US$ 0,19 cada). O saldo da OpenAI (fotos) tende a acabar primeiro.
+
+**Para reduzir o custo:** usar o modelo Haiku na leitura (~3x mais barato), enviar só as páginas que importam e, no futuro, guardar a leitura para reaproveitar quando a mesma referência for usada várias vezes.
+
+### 4.5 Detalhes técnicos
+| Arquivo | Mudança |
+|---|---|
+| `src/routes/referencia.js` | **Novo.** Rota de upload e análise (`POST /api/referencia/analisar`). |
+| `src/lib/anthropic.js` | Leitura da referência (PDF e imagem), cálculo de custo, instruções dos dois modos, limpeza dos dados. |
+| `src/routes/generate.js` | Recebe a referência e o modo; usa o assunto do original se o tema estiver vazio. |
+| `server.js` | Registra a rota nova. |
+| `public/index.html`, `public/app.js`, `public/styles.css` | Bloco de referência, escolha do modo, exibição do resultado e do custo. |
+| `README.md` | Documentação da função. |
+
+Variável opcional no Render: `ANALYSIS_MODEL=claude-haiku-4-5-20251001` (leitura cerca de 3x mais barata). Não é preciso mexer em Supabase, OpenAI nem fontes.
 
 ---
 
@@ -127,8 +188,9 @@ Referência: Claude Sonnet cobra aproximadamente US$ 3 por milhão de tokens de 
 - **Tempo de geração:** cerca de 1 a 2 minutos por post. O plano gratuito do Render "dorme" quando fica parado, então o primeiro acesso do dia pode demorar mais, e há limite de tempo por requisição (~100 s).
 - **Atualidade dos temas:** a busca na web é boa, mas a Rachel deve conferir os fatos antes de publicar (a IA pode errar detalhes).
 - **Densidade de texto:** já foram feitos ajustes para evitar texto demais e sobreposição, mas ainda vale revisar os slides.
-- **Referências por upload ainda não existem** (ver seção 4).
-- **Acesso e segurança:** a versão atual não tem login/senha por usuário, e quem tiver o link consegue gerar posts e gastar crédito. Para uso em equipe, o ideal é adicionar acesso protegido antes de compartilhar amplamente.
+- **Post de referência ainda sem teste real:** a função foi testada com respostas simuladas da IA. No primeiro uso real, conferir se o PDF é lido e se o post sai como esperado (ver seção 4).
+- **Chave da Anthropic no Render:** o erro 401 ("invalid x-api-key") precisa ser corrigido criando uma chave nova em `ANTHROPIC_API_KEY`. Sem isso nada do Claude funciona.
+- **Acesso e segurança:** a versão atual não tem login/senha por usuário, e quem tiver o link consegue gerar posts e gastar crédito (agora também com leituras de referência). Para uso em equipe, o ideal é adicionar acesso protegido antes de compartilhar amplamente.
 - **Licença da fonte Gallient** pendente (seção 5.5).
 
 ---
@@ -153,7 +215,7 @@ Referência: Claude Sonnet cobra aproximadamente US$ 3 por milhão de tokens de 
 
 - **Link do site:** https://geradordecarrosel.onrender.com/
 - **Login:** não há. O link é de acesso aberto (ver limitação na seção 7).
-- **Sugestão para a avaliação:** gerar 2 a 3 posts de temas diferentes (um tema em alta sugerido pelo sistema, um tema próprio, e um com roteiro detalhado de referência) e comparar com os posts manuais.
+- **Sugestão para a avaliação:** gerar 2 a 3 posts de temas diferentes (um tema em alta sugerido pelo sistema, um tema próprio, e um a partir de um post de referência em PDF ou prints) e comparar com os posts manuais.
 
 ---
 
@@ -161,6 +223,7 @@ Referência: Claude Sonnet cobra aproximadamente US$ 3 por milhão de tokens de 
 
 1. Avaliar a ferramenta na prática com alguns posts de teste.
 2. Comprar a licença comercial da fonte Gallient antes de publicar.
-3. Decidir se vale construir o **upload de posts/imagens de referência** direto no site.
+3. Renovar a chave da Anthropic no Render e testar o **post de referência** com um PDF real.
 4. Adicionar proteção de acesso (login) caso mais pessoas vão usar.
 5. Definir o orçamento mensal de crédito das APIs conforme o volume de posts desejado.
+
